@@ -836,7 +836,13 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
 
             if (mSelectedDeviceData.type == BluetoothDeviceData.kType_Uart) {      // if is uart, show all the available activities
-                showChooseDeviceServiceDialog(mSelectedDeviceData);
+                //showChooseDeviceServiceDialog(mSelectedDeviceData);
+
+                mComponentToStartWhenConnected = ControllerActivity.class;
+                if (mComponentToStartWhenConnected != null) {
+                    connect(mSelectedDeviceData.device);            // First connect to the device, and when connected go to selected activity
+                }
+
             } else {                          // if no uart, then go directly to info
                 Log.d(TAG, "No UART service found. Go to InfoActivity");
                 mComponentToStartWhenConnected = InfoActivity.class;
