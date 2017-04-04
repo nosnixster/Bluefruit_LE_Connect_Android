@@ -24,19 +24,26 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListAdapter;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+
 
 import com.adafruit.bluefruit.le.connect.R;
 import com.adafruit.bluefruit.le.connect.app.settings.ConnectedSettingsActivity;
 import com.adafruit.bluefruit.le.connect.ble.BleManager;
 import com.adafruit.bluefruit.le.connect.ui.utils.ExpandableHeightExpandableListView;
 import com.adafruit.bluefruit.le.connect.ui.utils.ExpandableHeightListView;
+import com.larswerkman.holocolorpicker.ColorPicker;
+import com.larswerkman.holocolorpicker.SaturationBar;
+import com.larswerkman.holocolorpicker.ValueBar;
+
 
 
 import java.nio.ByteBuffer;
 
-public class ControllerActivity extends UartInterfaceActivity {
+public class ControllerActivity extends UartInterfaceActivity implements AdapterView.OnItemSelectedListener, ColorPicker.OnColorChangedListener {
     // Config
     private final static boolean kKeepUpdatingParentValuesInChildActivities = true;
 
@@ -55,19 +62,13 @@ public class ControllerActivity extends UartInterfaceActivity {
     // Constants
     private final static int kSendDataInterval = 500;   // milliseconds
 
-    // Sensor Types
-    private static final int kSensorType_Quaternion = 0;
-    private static final int kSensorType_Accelerometer = 1;
-    private static final int kSensorType_Gyroscope = 2;
-    private static final int kSensorType_Magnetometer = 3;
-    private static final int kSensorType_Location = 4;
-    private static final int kNumSensorTypes = 5;
-
     // UI
     private ExpandableHeightExpandableListView mControllerListView;
     private ExpandableListAdapter mControllerListAdapter;
 
     private ViewGroup mUartTooltipViewGroup;
+
+    private Spinner animSpinner;
 
     // Data
     private Handler sendDataHandler = new Handler();
@@ -78,6 +79,22 @@ public class ControllerActivity extends UartInterfaceActivity {
 
 
     private boolean isSensorPollingEnabled = false;
+
+
+    //color picker
+    // Constants
+    private final static boolean kPersistValues = true;
+    //private final static String kPreferences = "ColorPickerActivity_prefs";
+    private final static String kPreferences_color = "color";
+
+    private final static int kFirstTimeColor = 0x0000ff;
+
+    // UI
+    private ColorPicker mColorPicker;
+    private View mRgbColorView;
+    private TextView mRgbTextView;
+
+    private int mSelectedColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +112,12 @@ public class ControllerActivity extends UartInterfaceActivity {
         //mControllerListView.setAdapter(mControllerListAdapter);
         //mControllerListView.setExpanded(true);
 
+        animSpinner = (Spinner)findViewById(R.id.animSpinner);
+        String[] items = new String[]{"Static", "Rainbow", "Fade"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, items);
+        animSpinner.setAdapter(adapter);
+        animSpinner.setOnItemSelectedListener(this);
+/*
         ExpandableHeightListView interfaceListView = (ExpandableHeightListView) findViewById(R.id.interfaceListView);
         ArrayAdapter<String> interfaceListAdapter = new ArrayAdapter<>(this, R.layout.layout_controller_interface_title, R.id.titleTextView, getResources().getStringArray(R.array.controller_interface_items));
         assert interfaceListView != null;
@@ -112,13 +135,15 @@ public class ControllerActivity extends UartInterfaceActivity {
                 }
             }
         });
-
+*/
 
         // Sensors
         // mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         // mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         // mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         // mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+
 
         // Start services
         onServicesDiscovered();
@@ -135,6 +160,13 @@ public class ControllerActivity extends UartInterfaceActivity {
     @Override
     protected void onStop() {
         Log.d(TAG, "onStop");
+
+        if (kPersistValues) {
+            SharedPreferences settings = getSharedPreferences(kPreferences, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putInt(kPreferences_color, mSelectedColor);
+            editor.apply();
+        }
 
         super.onStop();
     }
@@ -238,4 +270,138 @@ public class ControllerActivity extends UartInterfaceActivity {
     }
 
 
+
+
+    public void onItemSelected(AdapterView<?> parent, View view, int pos,long id) {
+        LinearLayout myLayout = (LinearLayout)findViewById(R.id.inflateLayout);
+
+        switch (pos){
+
+            case 0:
+                myLayout.removeAllViews();
+                //remove current view
+                /*
+                View myView = findViewById(R.id.rainbowLayout);
+                if(myView!=null) {
+                    ViewGroup viewparent = (ViewGroup) myView.getParent();
+                    viewparent.removeView(myView);
+                }
+*/
+
+                LinearLayout colorpicklayout = (LinearLayout)findViewById(R.id.colorPickerLayout);
+                if(colorpicklayout==null){
+                    //LinearLayout myLayout = (LinearLayout)findViewById(R.id.inflateLayout);
+                    View hiddenInfo = getLayoutInflater().inflate(R.layout.activity_color_picker, myLayout, false);
+                    if(myLayout!=null &&hiddenInfo!=null) {
+                        myLayout.addView(hiddenInfo);
+                    }
+
+                    //color picker
+                    // UI
+                    mRgbColorView = findViewById(R.id.rgbColorView);
+                    mRgbTextView = (TextView) findViewById(R.id.rgbTextView);
+
+                    SaturationBar mSaturationBar = (SaturationBar) findViewById(R.id.saturationbar);
+                    ValueBar mValueBar = (ValueBar) findViewById(R.id.valuebar);
+                    mColorPicker = (ColorPicker) findViewById(R.id.colorPicker);
+                    if (mColorPicker != null) {
+                        mColorPicker.addSaturationBar(mSaturationBar);
+                        mColorPicker.addValueBar(mValueBar);
+                        mColorPicker.setOnColorChangedListener((ColorPicker.OnColorChangedListener) this);
+                    }
+
+                    if (kPersistValues) {
+                        SharedPreferences preferences = getSharedPreferences(kPreferences, Context.MODE_PRIVATE);
+                        mSelectedColor = preferences.getInt(kPreferences_color, kFirstTimeColor);
+                    } else {
+                        mSelectedColor = kFirstTimeColor;
+                    }
+
+                    mColorPicker.setOldCenterColor(mSelectedColor);
+                    mColorPicker.setColor(mSelectedColor);
+                    onColorChanged(mSelectedColor);
+                }
+
+                break;
+
+            case 1:
+                //save colorpicker state
+                if (kPersistValues) {
+                    SharedPreferences settings = getSharedPreferences(kPreferences, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = settings.edit();
+                    editor.putInt(kPreferences_color, mSelectedColor);
+                    editor.apply();
+                }
+                //remove current view
+                myLayout.removeAllViews();
+                /*
+
+                View myView2 = findViewById(R.id.colorPickerLayout);
+                if(myView2!=null) {
+                    ViewGroup viewparent = (ViewGroup) myView2.getParent();
+                    viewparent.removeView(myView2);
+                }*/
+
+                LinearLayout rainbowpicklayout = (LinearLayout)findViewById(R.id.rainbowLayout);
+                if(rainbowpicklayout==null){
+                    //LinearLayout myLayout = (LinearLayout)findViewById(R.id.inflateLayout);
+                    View hiddenInfo = getLayoutInflater().inflate(R.layout.layout_rainbow, myLayout, false);
+                    if(myLayout!=null &&hiddenInfo!=null) {
+                        myLayout.addView(hiddenInfo);
+                    }
+                }
+
+                break;
+
+        }
+
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> arg0) {
+        // not possible
+    }
+
+
+
+
+    //COLOR PICKER
+    @Override
+    public void onColorChanged(int color) {
+        // Save selected color
+        mSelectedColor = color;
+
+        // Update UI
+        mRgbColorView.setBackgroundColor(color);
+
+        final int r = (color >> 16) & 0xFF;
+        final int g = (color >> 8) & 0xFF;
+        final int b = (color >> 0) & 0xFF;
+        final String text = String.format(getString(R.string.colorpicker_rgbformat), r, g, b);
+        mRgbTextView.setText(text);
+    }
+
+    public void onClickSend(View view) {
+        // Set the old color
+        mColorPicker.setOldCenterColor(mSelectedColor);
+
+        // Send selected color !Crgb
+        byte r = (byte) ((mSelectedColor >> 16) & 0xFF);
+        byte g = (byte) ((mSelectedColor >> 8) & 0xFF);
+        byte b = (byte) ((mSelectedColor >> 0) & 0xFF);
+
+        ByteBuffer buffer = ByteBuffer.allocate(2 + 3 * 1).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+
+        // prefix
+        String prefix = "!C";
+        buffer.put(prefix.getBytes());
+
+        // values
+        buffer.put(r);
+        buffer.put(g);
+        buffer.put(b);
+
+        byte[] result = buffer.array();
+        sendDataWithCRC(result);
+    }
 }
