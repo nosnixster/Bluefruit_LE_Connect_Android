@@ -201,6 +201,12 @@
     <string name="colorpicker_send">Send</string>
     <string name="colorpicker_rgbformat">R:%1$d G:%2$d B:%3$d</string>
 
+    <!-- Rainbow Picker -->
+    <string name="direction_forward">Forward</string>
+    <string name="direction_reverse">Reverse</string>
+    <string name="direction">Reverse Direction</string>
+    <string name="animation_speed">Animation Speed</string>
+    <string name="animation_speed_format">%1$d</string>
 
     <!-- Beacon -->
     <string name="title_activity_beacon">Beacons</string>

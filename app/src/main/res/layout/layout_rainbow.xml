@@ -15,16 +15,48 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <Switch
-            android:id="@+id/directionSwitch"
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Switch" />
+            android:text="@string/animation_speed"
+            android:textColor="#ffffff"
+            android:textColorLink="#ffffff" />
+
+        <TextView
+            android:id="@+id/speedText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/animation_speed_format"
+            android:textColor="#ffffff"
+            android:textColorLink="#ffffff" />
 
         <SeekBar
             android:id="@+id/speedBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:progressBackgroundTint="#ffffff"
+            android:progressTint="#ffffff" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/direction"
+            android:textColor="#ffffff"
+            android:textColorLink="#ffffff" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+        </LinearLayout>
+
+        <Switch
+            android:id="@+id/directionSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#ffffff" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -50,8 +82,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
                         android:layout_marginEnd="10dp"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
                         android:onClick="onClickSend"
                         android:text="@string/colorpicker_send" />
                 </LinearLayout>
